@@ -10,8 +10,13 @@ labelsCol = np.loadtxt('data.txt',dtype="str", usecols=[2])
 values = valuesCol[1:]
 labels = labelsCol[1:]
 
+values[:,0] -= np.mean(values[:,0])
+values[:,0] /= np.std(values[:,0])
+values[:,1] -= np.mean(values[:,1])
+values[:,1] /= np.std(values[:,1])
+
 #TODO posledna vrstva vzdy o velkosti poctu kategorii, dorobit zautomatizvane
-layers = [20,30,3]
+layers = [20,10,3]
 (dim, count) = values.shape
 
 #TODO shuffluj data
@@ -22,7 +27,7 @@ for j in range(len(layers)):
     secDim = layers[j]
 
 model = Model(weights)
-model.train(layers,values,labels,0.1,5)
+model.train(layers,values,labels,0.1,100)
 
 
 

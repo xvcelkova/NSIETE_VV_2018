@@ -16,6 +16,15 @@ class Model():
         dsigmoid = y * (1 - y)
         return dsigmoid
 
+    #softmax
+    def f_softmax(self, x):
+        softmax = np.e ** (x) / np.sum(np.e ** (x))
+        return softmax
+
+    def df_softmax(self, x):
+        y = np.e ** (x) / np.sum(np.e ** (x))
+        dsoftmax = y * (1 - y)
+
     def cost(self,targets,outputs):
         return np.sum((targets - outputs) ** 2, axis=0)
 
@@ -28,38 +37,37 @@ class Model():
             CE = 0
             RE = 0
             for i in np.random.permutation(dim):
-                h = list()  #vstupy pred maticovym nasobenim
-                b = list()  #vysledok vstupov * matica vah, pred aktiv fciou
-                gradients = [0] * len(layers)
-                dW = [0] * len(layers)
+                nets = list()  #vysledok vstupov * matica vah, pred aktiv fciou
+                activations = list()
+                gradients = [None] * len(layers)
+                dW = [None] * len(layers)
                 y = values[i]
                 d = targets[...,i]
 
                 for j in range(len(layers)):
-                    h.append(y)
                     y = np.append(y, [1], 0)
                     a = np.matmul(self.weights[j], y)
-                    b.append(a)
-                    y = self.f_sig(a);
+                    nets.append(a)
+                    y = self.f_sig(a)
+                    activations.append(y)
 
                 CE += labels[i] != onehot_decode(y)
                 RE += self.cost(d, y)
-                gradients[2] = 3
 
                 #backpropagation
                 for j in reversed(range(len(layers))):
                     if(j==(len(layers)-1)):
-                        gradients[j] = ((d - y) * self.df_sig(b[j]))
+                        gradients[j] = ((d - y) * self.df_sig(nets[j]))
+                        dW[j] = np.outer(gradients[j], np.append(activations[j - 1],[1],0))
                     else:
-                        gradients[j] = np.matmul(self.df_sig(b[j]), gradients[j+1])
+                        gradients[j] = np.matmul(np.transpose(self.weights[j + 1][:, :-1]), gradients[j + 1]) * self.df_sig(nets[j])
+                        if(j==0):
+                            dW[j] = np.outer(gradients[j], np.append(values[i], [1], 0))
+                        else:
+                            dW[j] = np.outer(gradients[j], np.append(activations[j - 1], [1], 0))
 
-                for j in reversed(range(len(layers))):
-                    if(j==len(layers)-1):
-                        dW[j] = np.outer(gradients[j], h[j])
-                        self.weights[j] += alpha * dW[j]
-                    else:
-                        dW[j] = np.outer(gradients[j], b[j])
-                        self.weights[j] += alpha * dW[j]
+                for j in range(len(layers)):
+                    self.weights[j] += alpha * dW[j]
 
             CE /= dim
             RE /= dim
