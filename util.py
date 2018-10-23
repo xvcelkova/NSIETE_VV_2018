@@ -22,3 +22,15 @@ def onehot_encode(labels, c):
         if(labels[i] == "C"):
             out[2][i] = 1
     return out
+
+def encode_color(labels):
+    out = [None] *len(labels)
+
+    for i in range(len(labels)):
+        if (labels[i] == "A"):
+            out[i] = "r"
+        if (labels[i] == "B"):
+            out[i] = "g"
+        if (labels[i] == "C"):
+            out[i] = "b"
+    return out
