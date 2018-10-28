@@ -43,11 +43,11 @@ validation_labels =  labels[validation_ind]
 #models architecture
 layers = list()
 layers1 = [128,128,128,3]
-layers2 = [128,128,3]
-layers3 = [20,30,3]
-layers4 = [50,70,40,3]
+layers2 = [128,3]
+layers3 = [30,20,3]
+layers4 = [70,50,40,3]
 layers.append(layers1)
-layers.append(layers2)
+#layers.append(layers2)
 #layers.append(layers3)
 #layers.append(layers4)
 
@@ -55,11 +55,11 @@ layers.append(layers2)
 # sigmoid/softmax/tanh
 functions = list()
 functions1 = ["tanh","tanh","tanh","softmax"]
-functions2 = ["tanh","tanh","softmax"]
+functions2 = ["tanh","softmax"]
 functions3 = ["tanh","tanh","softmax"]
 functions4 = ["tanh","tanh","tanh","softmax"]
 functions.append(functions1)
-functions.append(functions2)
+#functions.append(functions2)
 #functions.append(functions3)
 #functions.append(functions4)
 
@@ -101,10 +101,11 @@ for i in range(len(layers)):
 #train on whole set with best model
 print("BEST MODEL - architecture ",layers[index])
 model = Model(all_weights[index],layers[index],functions[index])
-train_CE, train_RE, train_CEs, train_REs, ep = model.train(values,labels,0.1,epochs[index],None,None)
+train_CE, train_RE, train_CEs, train_REs, ep = model.train(values,labels,0.1,epochs[index]+1,None,None)
 print("")
 print("LAST EPOCH")
 print(ep, 'epoch, CE = {:6.2%}, RE = {:.5f}'.format(train_CE, train_RE))
+print("------------------------------------------")
 
 #test data
 CE, RE, predicted_labels = model.test(testDataValues,testDataLabels)
@@ -136,8 +137,8 @@ for i in range(len(testDataLabels)):
 
 print("")
 print("Confucion Matrix")
-print("Predicted Class")
-print("|A|   |B|   |C|")
-print(cell_text[0], "| A |")
-print(cell_text[1], "| B | Actual Class")
-print(cell_text[2], "| C |")
+print("     Predicted Class")
+print("     |A|\t\t|B|\t\t|C|")
+print("| A |",cell_text[0][0],"\t",cell_text[0][1],"\t",cell_text[0][2])
+print("| B |",cell_text[1][0],"\t    ",cell_text[1][1],"\t",cell_text[1][2], "     Actual Class")
+print("| C |",cell_text[2][0],"\t    ",cell_text[2][1],"\t",cell_text[2][2])
