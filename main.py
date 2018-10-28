@@ -33,37 +33,111 @@ ind = np.arange(0,len(values[:,0]))
 random.shuffle(ind)
 split =  int(len(values[:,0])* 0.8)
 train_ind = ind[:split]
-test_ind  =  ind[split:]
+validation_ind  =  ind[split:]
 
 train_inputs = values[train_ind,:]
 train_labels = labels[train_ind]
-test_inputs =  values[test_ind,:]
-test_labels =  labels[test_ind]
+validation_inputs =  values[validation_ind,:]
+validation_labels =  labels[validation_ind]
 
-#TODO posledna vrstva vzdy o velkosti poctu kategorii, dorobit zautomatizvane
-layers = [20,10,3]
+#models architecture
+layers = list()
+layers1 = [128,128,128,3]
+layers2 = [128,128,3]
+layers3 = [20,30,3]
+layers4 = [50,70,40,3]
+layers.append(layers1)
+layers.append(layers2)
+#layers.append(layers3)
+#layers.append(layers4)
+
 
 # sigmoid/softmax/tanh
-functions = ["tanh","tanh","softmax"]
+functions = list()
+functions1 = ["tanh","tanh","tanh","softmax"]
+functions2 = ["tanh","tanh","softmax"]
+functions3 = ["tanh","tanh","softmax"]
+functions4 = ["tanh","tanh","tanh","softmax"]
+functions.append(functions1)
+functions.append(functions2)
+#functions.append(functions3)
+#functions.append(functions4)
+
+
 (dim, count) = values.shape
 
-secDim = count
-weights = list()
-for j in range(len(layers)):
-    weights.append(np.random.normal(0, 1, [layers[j], secDim + 1]))
-    secDim = layers[j]
+#weight martices
+all_weights = list()
+for i in range(len(layers)):
+    secDim = count
+    weights = list()
+    for j in range(len(layers[i])):
+        weights.append(np.random.normal(0, np.sqrt(2 / secDim), [layers[i][j], secDim + 1]))
+        secDim = layers[i][j]
+    all_weights.append(weights)
 
-model = Model(weights,layers,functions)
-model.train(train_inputs,train_labels,0.01,90)
-CE, RE, random, predicted_labels = model.test(test_inputs,test_labels)
-print('Validation error: CE = {:6.2%}, RE = {:.5f}'.format(CE, RE))
+#train data + validation
+validation_errors = list()
+epochs = list()
+for i in range(len(layers)):
+    print("Model ", i+1)
+    model = Model(all_weights[i],layers[i],functions[i])
+    train_CE, train_RE, train_CEs, train_REs, ep, val_CE, val_RE = model.train(train_inputs,train_labels,0.1,150,validation_inputs,validation_labels)
+    epochs.append(ep)
+    validation_errors.append(train_CE)
+    print("LAST EPOCH")
+    print(ep, 'epoch, CE = {:6.2%}, RE = {:.5f}'.format(train_CE, train_RE))
+    print('Validation error: CE = {:6.2%}, RE = {:.5f}'.format(val_CE, val_RE))
+    print("------------------------------------------")
 
-CE, RE, random, predicted_labels = model.test(testDataValues,testDataLabels)
+#choose best model according to minimal validation error
+minimum = float("inf")
+index = len(layers)+1
+for i in range(len(layers)):
+    if(validation_errors[i]<minimum):
+        minimum = validation_errors[i]
+        index = i
+
+#train on whole set with best model
+print("BEST MODEL - architecture ",layers[index])
+model = Model(all_weights[index],layers[index],functions[index])
+train_CE, train_RE, train_CEs, train_REs, ep = model.train(values,labels,0.1,epochs[index],None,None)
+print("")
+print("LAST EPOCH")
+print(ep, 'epoch, CE = {:6.2%}, RE = {:.5f}'.format(train_CE, train_RE))
+
+#test data
+CE, RE, predicted_labels = model.test(testDataValues,testDataLabels)
+print("")
+print("Test Data")
 print('Final testing error: CE = {:6.2%}, RE = {:.5f}'.format(CE, RE))
+
+#graphs
 plt.scatter(testDataValues[:,0],testDataValues[:,1],c = encode_color(testDataLabels))
 plt.show()
 
-plt.scatter(testDataValues[:,0][random],testDataValues[:,1][random],c = encode_color(predicted_labels))
+plt.scatter(testDataValues[:,0],testDataValues[:,1],c = encode_color(predicted_labels))
 plt.show()
 
+#error vs time
+plt.plot(np.arange(0,ep+1,1),train_CEs,np.arange(0,ep+1,1),train_REs)
+plt.title('CE, RE')
+plt.legend(['CE', 'RE'])
+plt.xlabel('Epoch')
+plt.show()
 
+#confusion matrix
+cell_text = np.zeros((3,3))
+encodeTestDataLabels = encode_letter(testDataLabels)
+encodePredictedLabels = encode_letter(predicted_labels)
+
+for i in range(len(testDataLabels)):
+    cell_text[encodeTestDataLabels[i]][encodePredictedLabels[i]] += 1
+
+print("")
+print("Confucion Matrix")
+print("Predicted Class")
+print("|A|   |B|   |C|")
+print(cell_text[0], "| A |")
+print(cell_text[1], "| B | Actual Class")
+print(cell_text[2], "| C |")

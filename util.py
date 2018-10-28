@@ -34,3 +34,15 @@ def encode_color(labels):
         if (labels[i] == "C"):
             out[i] = "b"
     return out
+
+def encode_letter(labels):
+    out = [None] *len(labels)
+
+    for i in range(len(labels)):
+        if (labels[i] == "A"):
+            out[i] = 0
+        if (labels[i] == "B"):
+            out[i] = 1
+        if (labels[i] == "C"):
+            out[i] = 2
+    return out

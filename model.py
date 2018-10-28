@@ -70,8 +70,7 @@ class Model():
         CE = 0
         RE = 0
 
-        random = np.random.permutation(dim)
-        for i in random:
+        for i in range(dim):
             x = values[i]
             d = targets[..., i]
             y = self.predict(x)
@@ -85,17 +84,23 @@ class Model():
         CE /= dim
         RE /= dim
 
-        return CE, RE, random, predicted_labels
+        return CE, RE, predicted_labels
 
 
-    def train(self, values, labels, alpha, eps):
+    def train(self, values, labels, alpha, eps, validation_inputs, validation_labels):
+        counter = 0
+        minimum = float("inf")
+        validation_CEs = list()
+        learning_rate = alpha
+        train_CEs = list()
+        train_REs = list()
+
         (dim, count) = values.shape
-        #TODO zmenit 3ku
         targets = onehot_encode(labels,3)
 
         for ep in range(eps):
-            CE = 0
-            RE = 0
+            train_CE = 0
+            train_RE = 0
             for i in np.random.permutation(dim):
                 nets = list()  #vysledok vstupov * matica vah, pred aktiv fciou
                 activations = list()
@@ -106,11 +111,11 @@ class Model():
 
                 y,nets,activations = self.forward(y,nets,activations)
 
-                CE += labels[i] != onehot_decode(y)
+                train_CE += labels[i] != onehot_decode(y)
                 if(self.functions[len(self.functions)-1] == "sigmoid" or self.functions[len(self.functions) - 1] == "tanh"):
-                    RE += self.cost(d, y)
+                    train_RE += self.cost(d, y)
                 if (self.functions[len(self.functions) - 1] == "softmax"):
-                    RE += self.crossentropy(d, y)
+                    train_RE += self.crossentropy(d, y)
 
                 #backpropagation
                 for j in reversed(range(len(self.layers))):
@@ -138,8 +143,41 @@ class Model():
                             dW[j] = np.outer(gradients[j], np.append(activations[j - 1], [1], 0))
 
                 for j in range(len(self.layers)):
-                    self.weights[j] += alpha * dW[j]
+                    self.weights[j] += learning_rate * dW[j]
 
-            CE /= dim
-            RE /= dim
-            print(ep+1,'epoch, CE = {:6.2%}, RE = {:.5f}'.format(CE, RE))
+            if(ep % 10 == 0):
+               learning_rate *= 0.5
+
+            train_CE /= dim
+            train_RE /= dim
+
+            if(ep % 10 == 0):
+                print("")
+                print(ep,'epoch, CE = {:6.2%}, RE = {:.5f}'.format(train_CE, train_RE),end='', flush=True)
+            if(ep % 10 != 0):
+                print('.', end='', flush=True)
+
+            train_CEs.append(train_CE)
+            train_REs.append(train_RE)
+
+            if(np.any(validation_inputs != None)):
+                val_CE, val_RE, predicted_labels = self.test(validation_inputs, validation_labels)
+                #if (ep % 10 == 0):
+                    #print('Validation error: CE = {:6.2%}, RE = {:.5f}'.format(val_CE, val_RE))
+
+                validation_CEs.append(val_CE)
+                if(val_CE < minimum):
+                    counter = 0
+                    minimum = val_CE
+                else:
+                    counter += 1
+
+                if(counter >= 10):
+                    print("")
+                    print("Training ended")
+                    break
+
+        if(np.any(validation_inputs != None)):
+            return train_CE, train_RE, train_CEs, train_REs, ep, val_CE, val_RE
+        else:
+            return train_CE, train_RE, train_CEs,train_REs, ep
