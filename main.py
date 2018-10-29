@@ -18,15 +18,23 @@ testDataValues = testDataValuesCol[1:]
 testDataLabels = testDataLabelsCol[1:]
 
 #normalization
-values[:,0] -= np.mean(values[:,0])
-values[:,0] /= np.std(values[:,0])
-values[:,1] -= np.mean(values[:,1])
-values[:,1] /= np.std(values[:,1])
+mean0 = np.mean(values[:,0])
+std0 = np.std(values[:,0])
+mean1 = np.mean(values[:,1])
+std1 = np.std(values[:,1])
+values[:,0] -= mean0
+values[:,0] /= std0
+values[:,1] -= mean1
+values[:,1] /= std1
 
-testDataValues[:,0] -= np.mean(testDataValues[:,0])
-testDataValues[:,0] /= np.std(testDataValues[:,0])
-testDataValues[:,1] -= np.mean(testDataValues[:,1])
-testDataValues[:,1] /= np.std(testDataValues[:,1])
+testmean0 = np.mean(testDataValues[:,0])
+teststd0 = np.std(testDataValues[:,0])
+testmean1 = np.mean(testDataValues[:,1])
+teststd1 = np.std(testDataValues[:,1])
+testDataValues[:,0] -= testmean0
+testDataValues[:,0] /= teststd0
+testDataValues[:,1] -= testmean1
+testDataValues[:,1] /= teststd1
 
 #shuffle data
 ind = np.arange(0,len(values[:,0]))
@@ -47,9 +55,9 @@ layers2 = [128,3]
 layers3 = [30,20,3]
 layers4 = [70,50,40,3]
 layers.append(layers1)
-#layers.append(layers2)
-#layers.append(layers3)
-#layers.append(layers4)
+layers.append(layers2)
+layers.append(layers3)
+layers.append(layers4)
 
 
 # sigmoid/softmax/tanh
@@ -59,9 +67,9 @@ functions2 = ["tanh","softmax"]
 functions3 = ["tanh","tanh","softmax"]
 functions4 = ["tanh","tanh","tanh","softmax"]
 functions.append(functions1)
-#functions.append(functions2)
-#functions.append(functions3)
-#functions.append(functions4)
+functions.append(functions2)
+functions.append(functions3)
+functions.append(functions4)
 
 
 (dim, count) = values.shape
@@ -84,7 +92,7 @@ for i in range(len(layers)):
     model = Model(all_weights[i],layers[i],functions[i])
     train_CE, train_RE, train_CEs, train_REs, ep, val_CE, val_RE = model.train(train_inputs,train_labels,0.1,150,validation_inputs,validation_labels)
     epochs.append(ep)
-    validation_errors.append(train_CE)
+    validation_errors.append(val_CE)
     print("LAST EPOCH")
     print(ep, 'epoch, CE = {:6.2%}, RE = {:.5f}'.format(train_CE, train_RE))
     print('Validation error: CE = {:6.2%}, RE = {:.5f}'.format(val_CE, val_RE))

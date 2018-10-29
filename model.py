@@ -172,7 +172,7 @@ class Model():
                 else:
                     counter += 1
 
-                if(counter >= 10):
+                if(counter >= 15):
                     print("")
                     print("Training ended")
                     break
